@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Motor LCA Analysis Toolbox for MATLAB"
+authors:
+  - family-names: "HELBLING"
+    given-names: "Hugo"
+    email: "hugo.helbling@univ-lyon1.fr"
+    affiliation: "Laboratoire Ampere, Université Claude Bernard Lyon 1"
+  - family-names: "DELPOUX"
+    given-names: "Romain"
+    email: "romain.delpoux@insa-lyon.fr"
+    affiliation: "Laboratoire Ampere, INSA Lyon"
+repository-code: ""
+keywords:
+  - "Life Cycle Assessment"
+  - "LCA"
+  - "Electric Motors"
+  - "Environmental Footprint"
+  - "EF 3.1"
+  - "EcoInvent"
+  - "MATLAB"
+license: "CC-BY-NC-4.0"
+license-url: "https://creativecommons.org/licenses/by-nc/4.0/"
+date-released: 2026-03-26
