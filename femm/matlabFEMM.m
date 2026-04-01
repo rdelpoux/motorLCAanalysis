@@ -109,6 +109,7 @@ materials.copper.fill_factor = kfill;                % [-]   Fill factor
 materials.copper.slot_area = S_enc;                  % [m^2] Slot area
 materials.copper.density = rho_copper;               % [kg/m^3] Material density
 materials.copper.mass_per_slot = V_cond_per_slot * rho_copper;  % [kg] Mass for analyzed slots
+materials.copper.mass = 4*4*materials.copper.mass_per_slot;  % [kg] Total mass (4 slots per pole, 4 poles)  
 materials.copper.description = 'Copper windings - stator';
 
 % Calculate rated current based on current density

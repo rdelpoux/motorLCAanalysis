@@ -2,11 +2,10 @@
 
 ![Work in Progress](https://img.shields.io/badge/status-work%20in%20progress-orange)
 
-> **⚠️ DISCLAIMER / AVERTISSEMENT**
+> **⚠️ DISCLAIMER **
 >
 > This toolbox is a **work in progress** and an experimental implementation. **No results are guaranteed**. This is a trial implementation without any claim regarding the validity of the results or the analyses that can be derived from them. Use this tool for educational and research exploration purposes only.
 >
-> Cet outil est un **travail en cours** et une implémentation expérimentale. **Aucun résultat n'est garanti**. Il s'agit d'un essai sans aucune prétention quant à la validité des résultats ni aux analyses qui peuvent en être tirées. Utilisez cet outil uniquement à des fins éducatives et de recherche exploratoire.
 
 This package provides MATLAB functions for performing Life Cycle Assessment (LCA) analysis of electric motors using Environmental Footprint (EF) v3.1 methodology.
 
@@ -31,18 +30,17 @@ motorLCAanalysis/
 │   ├── calculateMotorLCAParametric.m
 │   └── calculateMotorLCAMultiParametric.m
 ├── database/                # EcoInvent data files
-│   └── CSV_Impact_Machine.csv
+│   ├── CSV_Impact_Machine.csv
+│   └── motor_materials.mat
+├── femm/                    # FEMM integration files
+│   ├── SetProblemType.m
+│   ├── matlabFEMM.m
+│   └── femmSynrelLaplace.fem
 └── examples/                # Example scripts and tests
     ├── example_usage.m
-    ├── example_parametric_analysis.m
-    ├── example_2D_parametric.m
     ├── example_lifetime_analysis.m
-    ├── example_lifetime_2D.m
     ├── test_functions.m
-    ├── test_parametric.m
-    ├── test_lifetime.m
-    ├── plot_improved.m
-    └── how_to_use_results.m
+    └── plot_improved.m
 ```
 
 ## Files Description
@@ -79,19 +77,20 @@ motorLCAanalysis/
 ### Example Files (in `examples/` folder)
 
 - **example_usage.m**: Complete example workflow demonstrating all functions
-- **example_parametric_analysis.m**: Parametric analysis example (1D sweep)
-- **example_2D_parametric.m**: Multi-parametric analysis example (2D sweep)
 - **example_lifetime_analysis.m**: Lifetime energy consumption analysis (1D: load factor and operating hours)
-- **example_lifetime_2D.m**: 2D lifetime analysis (load factor × operating hours grid)
 - **test_functions.m**: Quick test of all main functions
-- **test_parametric.m**: Quick test of parametric analysis
-- **test_lifetime.m**: Quick test of lifetime energy calculation
 - **plot_improved.m**: Advanced visualization script
-- **how_to_use_results.m**: Guide for accessing and analyzing results
 
 ### Database Files (in `database/` folder)
 
 - **CSV_Impact_Machine.csv**: Sample CSV file from EcoInvent with motor materials and their environmental impacts
+- **motor_materials.mat**: Pre-processed MATLAB data file containing motor materials database
+
+### FEMM Integration Files (in `femm/` folder)
+
+- **matlabFEMM.m**: MATLAB interface for Finite Element Method Magnetics (FEMM)
+- **SetProblemType.m**: Helper function to configure FEMM problem types
+- **femmSynrelLaplace.fem**: Sample FEMM model file for synchronous reluctance motor analysis
 
 ## Getting Started
 
@@ -201,7 +200,7 @@ ylabel('Electricity (kWh)');
 title('Total Environmental Impact');
 ```
 
-See `example_parametric_analysis.m` and `example_2D_parametric.m` for complete examples.
+See `example_usage.m` for complete parametric analysis examples.
 
 ## Lifetime Energy Analysis
 
@@ -259,11 +258,7 @@ Typical result: Use phase represents 83% of total impact for this example.
 
 ### Advanced Analysis
 
-- `example_lifetime_analysis.m`: Complete lifetime analysis with load factor and lifetime variation
-- `example_lifetime_2D.m`: 2D parametric analysis (load factor × lifetime hours)
-- `test_lifetime.m`: Quick test
-
-These scripts help identify:
+See `example_lifetime_analysis.m` for complete lifetime analysis with load factor and lifetime variation. This script helps identify:
 - At which lifetime the use phase becomes dominant
 - Optimal load factor for minimum environmental impact
 - Sensitivity to operating conditions
