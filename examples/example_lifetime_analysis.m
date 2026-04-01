@@ -23,7 +23,7 @@ clc;
 %% CONFIGURATION: Choose material source
 % Set USE_DATABASE to true to load materials from motor_materials.mat
 % Set USE_DATABASE to false to use manually defined quantities
-USE_DATABASE = false;  % Change to true to use database
+USE_DATABASE = true;  % Change to true to use database
 
 fprintf('===== LIFETIME ENERGY CONSUMPTION AND LCA ANALYSIS =====\n');
 if USE_DATABASE
@@ -43,7 +43,7 @@ fprintf('Step 2: Defining motor specifications...\n');
 
 % Motor parameters
 P_nom = 2;          % Nominal power (kW)
-t_life = 20000;      % Lifetime operating hours (h)
+t_life = 10000;      % Lifetime operating hours (h)
 f_load = 0.5;     % Load factor (0.3 to 0.7)
 
 % Calculate lifetime energy consumption
