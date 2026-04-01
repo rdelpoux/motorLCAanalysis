@@ -17,6 +17,38 @@ clear all;
 close all;
 clc;
 
+%% CONFIGURATION: Choose material source
+% Set USE_DATABASE to true to load materials from motor_materials.mat
+% Set USE_DATABASE to false to use manually defined quantities
+USE_DATABASE = true;  % Change to true to use database
+
+%% CONFIGURATION: Motor specifications for energy calculation
+% Energy formula: E_vie = P_nom × f_load × t_life
+% Where:
+%   P_nom: Nominal power (kW)
+%   f_load: Load factor (0.3 to 0.7)
+%   t_life: Cumulative operating hours (h)
+%
+% Example: Small motor (1 kW), 20,000 h, f_load = 0.5
+%   E = 1 × 0.5 × 20,000 = 10,000 kWh ≈ 10 MWh
+P_nom = 2;          % Nominal power (kW)
+t_life = 20000;     % Lifetime operating hours (h)
+f_load = 0.5;       % Load factor (0.3 to 0.7)
+
+% Calculate lifetime energy consumption
+E_vie = P_nom * f_load * t_life;  % kWh
+
+if USE_DATABASE
+    fprintf('===== MOTOR LCA ANALYSIS - DATABASE MODE =====\n');
+else
+    fprintf('===== MOTOR LCA ANALYSIS - MANUAL MODE =====\n');
+end
+fprintf('\nMotor specifications:\n');
+fprintf('  Nominal power: %.1f kW\n', P_nom);
+fprintf('  Operating hours: %.0f h\n', t_life);
+fprintf('  Load factor: %.2f\n', f_load);
+fprintf('  Lifetime energy: %.0f kWh (%.1f MWh)\n\n', E_vie, E_vie/1000);
+
 %% Step 1: Import material data from CSV
 fprintf('===== STEP 1: Import Material Data =====\n');
 
@@ -47,15 +79,41 @@ end
 %% Step 3: Define material quantities for a specific motor
 fprintf('\n===== STEP 3: Define Motor Configuration =====\n');
 
-% Define the quantities of each material in your motor as cell array
-% Material names must match the 'name' field in your CSV file
-% Format: {material_name, quantity}
-materialQuantities = {
-    'market for permanent magnet, for electric motor', 0.8;   % kg
-    'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', 12.3;  % kg
-    'market for copper, cathode', 5.2;   % kg
-    'market for electricity, low voltage', 10000   % kWh (for motor production)
-};
+if USE_DATABASE
+    % Load material quantities from database
+    fprintf('Loading materials from database...\n');
+    scriptDir = fileparts(mfilename('fullpath'));
+    dbPath = fullfile(scriptDir, '..', 'database', 'motor_materials.mat');
+    load(dbPath, 'materials');
+
+    % Define the quantities from database
+    materialQuantities = {
+        'market for permanent magnet, for electric motor', materials.magnets.mass;   % kg
+        'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', materials.stator_steel.mass + materials.rotor_steel.mass;  % kg
+        'market for copper, cathode', materials.copper.mass;   % kg
+        'market for electricity, low voltage', E_vie   % kWh (lifetime energy)
+    };
+
+    fprintf('\nMaterial quantities from database:\n');
+    fprintf('  Stator steel: %.2f kg\n', materials.stator_steel.mass);
+    fprintf('  Rotor steel: %.2f kg\n', materials.rotor_steel.mass);
+    fprintf('  Copper: %.2f kg\n', materials.copper.mass);
+    fprintf('  Magnets: %.2f kg\n', materials.magnets.mass);
+    fprintf('  Total active mass: %.2f kg\n', materials.total.mass_active);
+else
+    % Define the quantities of each material manually
+    % Material names must match the 'name' field in your CSV file
+    % Format: {material_name, quantity}
+    materialQuantities = {
+        'market for permanent magnet, for electric motor', 0.8;   % kg
+        'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', 12.3;  % kg
+        'market for copper, cathode', 5.2;   % kg
+        'market for electricity, low voltage', E_vie   % kWh (lifetime energy)
+    };
+
+    fprintf('\nManually defined material quantities:\n');
+    fprintf('  Lifetime energy: %.0f kWh (%.1f MWh)\n', E_vie, E_vie/1000);
+end
 
 fprintf('\nMotor configuration:\n');
 for i = 1:size(materialQuantities, 1)

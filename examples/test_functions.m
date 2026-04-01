@@ -11,7 +11,36 @@ clear all;
 close all;
 clc;
 
-fprintf('===== TESTING MOTOR LCA FUNCTIONS =====\n\n');
+%% CONFIGURATION: Choose material source
+% Set USE_DATABASE to true to load materials from motor_materials.mat
+% Set USE_DATABASE to false to use manually defined quantities
+USE_DATABASE = true;  % Change to true to use database
+
+%% CONFIGURATION: Motor specifications for energy calculation
+% Energy formula: E_vie = P_nom × f_load × t_life
+% Where:
+%   P_nom: Nominal power (kW)
+%   f_load: Load factor (0.3 to 0.7)
+%   t_life: Cumulative operating hours (h)
+%
+% Example: Small motor (1 kW), 20,000 h, f_load = 0.5
+%   E = 1 × 0.5 × 20,000 = 10,000 kWh ≈ 10 MWh
+P_nom = 1;          % Nominal power (kW)
+t_life = 20000;     % Lifetime operating hours (h)
+f_load = 0.5;       % Load factor (0.3 to 0.7)
+
+% Calculate lifetime energy consumption
+E_vie = P_nom * f_load * t_life;  % kWh
+
+fprintf('===== TESTING MOTOR LCA FUNCTIONS =====\n');
+if USE_DATABASE
+    fprintf('Mode: Using material quantities from database\n');
+else
+    fprintf('Mode: Using manually defined quantities\n');
+end
+fprintf('\nEnergy configuration:\n');
+fprintf('  P_nom = %.1f kW, t_life = %.0f h, f_load = %.2f\n', P_nom, t_life, f_load);
+fprintf('  Lifetime energy: E_vie = %.0f kWh (%.1f MWh)\n\n', E_vie, E_vie/1000);
 
 %% Test 1: Import CSV
 fprintf('Test 1: Importing CSV file...\n');
@@ -46,17 +75,48 @@ catch ME
     return;
 end
 
-%% Test 3: Calculate Motor LCA
-fprintf('\nTest 3: Calculating motor LCA with sample quantities...\n');
-try
+%% Test 3: Load or define material quantities
+if USE_DATABASE
+    fprintf('\nTest 3a: Loading material quantities from database...\n');
+    try
+        % Get the directory of this script
+        scriptDir = fileparts(mfilename('fullpath'));
+        dbPath = fullfile(scriptDir, '..', 'database', 'motor_materials.mat');
+        load(dbPath, 'materials');
+
+        % Define quantities from database
+        materialQuantities = {
+            'market for permanent magnet, for electric motor', materials.magnets.mass;
+            'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', materials.stator_steel.mass + materials.rotor_steel.mass;
+            'market for copper, cathode', materials.copper.mass;
+            'market for electricity, low voltage', E_vie
+        };
+
+        fprintf('  SUCCESS: Loaded from database\n');
+        fprintf('  Stator steel: %.2f kg\n', materials.stator_steel.mass);
+        fprintf('  Rotor steel: %.2f kg\n', materials.rotor_steel.mass);
+        fprintf('  Copper: %.2f kg\n', materials.copper.mass);
+        fprintf('  Magnets: %.2f kg\n', materials.magnets.mass);
+    catch ME
+        fprintf('  ERROR: %s\n', ME.message);
+        return;
+    end
+else
+    fprintf('\nTest 3a: Using manually defined quantities...\n');
     % Define sample quantities as cell array {name, quantity}
     materialQuantities = {
         'market for permanent magnet, for electric motor', 0.8;
-        'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', 12.3;
-        'market for copper, cathode', 5.2;
-        'market for electricity, low voltage', 100
+        'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', 1.5;
+        'market for copper, cathode', 0.2;
+        'market for electricity, low voltage', E_vie
     };
+    fprintf('  Manual quantities defined\n');
+    fprintf('  Electricity: %.0f kWh\n', E_vie);
+end
 
+%% Test 3b: Calculate Motor LCA
+fprintf('\nTest 3b: Calculating motor LCA...\n');
+try
     motorImpacts = calculateMotorLCA(motorRAWmaterials, materialQuantities);
     fprintf('  SUCCESS: Motor LCA calculated\n');
     fprintf('  Total Unique Score: %.4e\n', motorImpacts.TotalUniqueScore);
