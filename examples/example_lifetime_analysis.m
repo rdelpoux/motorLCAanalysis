@@ -188,7 +188,7 @@ fprintf('Efficiency analysis complete!\n\n');
 fprintf('Step 7: Creating visualizations...\n');
 
 % Figure 1: Phase comparison (pie chart)
-figure('Name', 'Life Cycle Phases', 'NumberTitle', 'off', 'Position', [100, 100, 800, 400]);
+figure('Theme', 'light', 'Name', 'Life Cycle Phases', 'NumberTitle', 'off', 'Position', [100, 100, 800, 400]);
 
 subplot(1, 2, 1);
 % Calculate percentages
@@ -208,7 +208,7 @@ title('Impact by Life Cycle Phase');
 grid on;
 
 % Figure 1b: Impact categories by life cycle phase
-figure('Name', 'Impact Categories by Phase', 'NumberTitle', 'off', 'Position', [120, 120, 1400, 600]);
+figure('Theme', 'light', 'Name', 'Impact Categories by Phase', 'NumberTitle', 'off', 'Position', [120, 120, 1400, 600]);
 
 % Get normalized impacts for manufacturing and total
 impactCategories = fieldnames(manufacturingImpacts.TotalNormalizedImpacts);
@@ -244,7 +244,7 @@ xtickangle(45);
 set(gca, 'FontSize', 10);
 
 % Figure 2: Lifetime analysis
-figure('Name', 'Lifetime Analysis', 'NumberTitle', 'off', 'Position', [150, 150, 1200, 500]);
+figure('Theme', 'light', 'Name', 'Lifetime Analysis', 'NumberTitle', 'off', 'Position', [150, 150, 1200, 500]);
 
 subplot(1, 3, 1);
 plot(results_life.t_life/1000, results_life.E_pertes/1000, 'b-o', 'LineWidth', 2);
@@ -274,7 +274,7 @@ ylabel('Use Phase Contribution (%)');
 title('Use Phase Impact Percentage');
 
 % Figure 3: Use Phase Percentage for Different Efficiencies
-figure('Name', 'Use Phase vs Efficiency', 'NumberTitle', 'off', 'Position', [170, 170, 900, 600]);
+figure('Theme', 'light', 'Name', 'Use Phase vs Efficiency', 'NumberTitle', 'off', 'Position', [170, 170, 900, 600]);
 
 % Define colors and line styles for different efficiencies
 colors = [0.8 0.2 0.2;    % Red for 80%

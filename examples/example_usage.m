@@ -153,7 +153,7 @@ for i = 1:nMaterials
     materialNames{i} = motorImpacts.MaterialContributions(i).name;
 end
 
-figure('Name', 'Motor LCA Analysis', 'NumberTitle', 'off');
+figure('Theme', 'light', 'Name', 'Motor LCA Analysis', 'NumberTitle', 'off');
 
 % Subplot 1: Material contribution to unique score
 subplot(2, 1, 1);

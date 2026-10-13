@@ -33,7 +33,7 @@ for i = 1:length(impactCategories)
 end
 
 %% Figure 1: Material contributions (horizontal bar for better readability)
-figure('Name', 'Material Contributions', 'NumberTitle', 'off', 'Position', [100, 100, 800, 500]);
+figure('Theme', 'light', 'Name', 'Material Contributions', 'NumberTitle', 'off', 'Position', [100, 100, 800, 500]);
 
 barh(scores);
 ax = gca;
@@ -46,7 +46,7 @@ grid on;
 fprintf('Figure 1: Material contributions created\n');
 
 %% Figure 2: Impact categories (horizontal bar for better label visibility)
-figure('Name', 'Impact Categories', 'NumberTitle', 'off', 'Position', [150, 150, 900, 700]);
+figure('Theme', 'light', 'Name', 'Impact Categories', 'NumberTitle', 'off', 'Position', [150, 150, 900, 700]);
 
 barh(impactValues);
 ax = gca;
@@ -59,7 +59,7 @@ grid on;
 fprintf('Figure 2: Impact categories created\n');
 
 %% Figure 3: Percentage contributions pie chart
-figure('Name', 'Material Contribution Percentages', 'NumberTitle', 'off', 'Position', [200, 200, 800, 600]);
+figure('Theme', 'light', 'Name', 'Material Contribution Percentages', 'NumberTitle', 'off', 'Position', [200, 200, 800, 600]);
 
 percentages = 100 * scores / motorImpacts.TotalUniqueScore;
 pie(percentages, materialNames);
@@ -68,7 +68,7 @@ title('Material Contribution Percentages to Total Impact');
 fprintf('Figure 3: Pie chart created\n');
 
 %% Figure 4: Top 5 impact categories
-figure('Name', 'Top Impact Categories', 'NumberTitle', 'off', 'Position', [250, 250, 800, 500]);
+figure('Theme', 'light', 'Name', 'Top Impact Categories', 'NumberTitle', 'off', 'Position', [250, 250, 800, 500]);
 
 [sortedValues, sortIdx] = sort(impactValues, 'descend');
 topN = min(5, length(impactValues));
@@ -84,7 +84,7 @@ grid on;
 fprintf('Figure 4: Top impact categories created\n');
 
 %% Figure 5: Detailed breakdown per material and category
-figure('Name', 'Detailed Impact Breakdown', 'NumberTitle', 'off', 'Position', [300, 300, 1000, 600]);
+figure('Theme', 'light', 'Name', 'Detailed Impact Breakdown', 'NumberTitle', 'off', 'Position', [300, 300, 1000, 600]);
 
 % Create matrix for stacked bar chart (categories x materials)
 impactMatrix = zeros(length(impactCategories), nMaterials);
