@@ -35,7 +35,7 @@ mi_saveas(svgFileName);
 n_nodes = mi_createmesh; % create mesh
 fprintf(['\nNombre de noeuds FEMM = ' num2str(n_nodes) '\n']);
 % Def FEMM properties
-L_active = 19.3e-3; % [m]
+L_active = 0.1; % [m] longueur active (profondeur du .fem, confirmée par les essais au banc)
 mi_probdef(0, 'meters', 'planar', 1.e-8, L_active, 30,0);
 
  % We have to save before analyzing it.
