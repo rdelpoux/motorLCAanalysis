@@ -12,7 +12,7 @@
 %   couple = mo_gapintegral (déjà ramené à la machine complète)
 %   flux et tensions de circuit multipliés par nSym (modèle 1/4 de machine)
 %
-% See also motorConfig, configureBarriers, SetProblemType, matlabFEMM.
+% See also motorConfig, configureBarriers, plotTorqueRipple, SetProblemType, matlabFEMM.
 
 clearvars; clc;
 
@@ -131,22 +131,9 @@ for v = 1:numel(types)
 end
 
 tag = sprintf('Is%gA_beta%gdeg', Is, betaDeg);
-fig = figure('Name', ['Ondulation de couple ' tag]);
-hold on; grid on;
-for v = 1:numel(types)
-    r = results.(types{v});
-    plot(r.thetaDeg, r.torque, 'LineWidth', 1.5, 'DisplayName', ...
-        sprintf('%s : T_{moy} = %.3f Nm, ondulation = %.1f %%', types{v}, r.torqueMean, 100*r.torqueRipple));
-end
-xlabel('Position du rotor \theta_{m} [°]');
-ylabel('Couple [Nm]');
-title(sprintf('Couple sur 1/8 de tour mécanique, I_s = %g A, \\beta = %g°', Is, betaDeg));
-legend('Location', 'best');
-xlim([0 rad2deg(sweep)]);
 
 %% Sauvegarde des données et de la figure
 outMat = fullfile('results', ['torqueRipple_' tag '.mat']);
 save(outMat, 'results');
-exportgraphics(fig, fullfile('results', ['torqueRipple_' tag '.png']), 'Resolution', 150);
-exportgraphics(fig, fullfile('results', ['torqueRipple_' tag '.eps']));
+plotTorqueRipple(results, 'results');   % figure à fond clair, .png et .eps
 fprintf('\nRésultats enregistrés : %s (+ .png / .eps)\n', outMat);
