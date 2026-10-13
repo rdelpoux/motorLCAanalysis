@@ -23,20 +23,23 @@ clc;
 USE_DATABASE = true;  % Change to true to use database
 
 %% CONFIGURATION: Motor specifications for energy calculation
-% Energy formula: E_vie = P_nom × f_load × t_life
+% Energy formula for losses: E_losses = P_nom × f_load × t_life × (1 - η)
 % Where:
 %   P_nom: Nominal power (kW)
 %   f_load: Load factor (0.3 to 0.7)
 %   t_life: Cumulative operating hours (h)
+%   η: Motor efficiency (typically 0.80 for 80%)
 %
-% Example: Small motor (1 kW), 20,000 h, f_load = 0.5
-%   E = 1 × 0.5 × 20,000 = 10,000 kWh ≈ 10 MWh
+% Note: Only losses contribute to environmental impact during use phase
+% Example: Small motor (1 kW), 20,000 h, f_load = 0.5, η = 0.80
+%   E_losses = 1 × 0.5 × 20,000 × (1-0.80) = 2,000 kWh = 2 MWh
 P_nom = 2;          % Nominal power (kW)
 t_life = 20000;     % Lifetime operating hours (h)
 f_load = 0.5;       % Load factor (0.3 to 0.7)
+eta = 0.80;         % Motor efficiency (80%)
 
-% Calculate lifetime energy consumption
-E_vie = P_nom * f_load * t_life;  % kWh
+% Calculate lifetime energy losses (only losses contribute to LCA)
+E_pertes = P_nom * f_load * t_life * (1 - eta);  % kWh
 
 if USE_DATABASE
     fprintf('===== MOTOR LCA ANALYSIS - DATABASE MODE =====\n');
@@ -47,7 +50,8 @@ fprintf('\nMotor specifications:\n');
 fprintf('  Nominal power: %.1f kW\n', P_nom);
 fprintf('  Operating hours: %.0f h\n', t_life);
 fprintf('  Load factor: %.2f\n', f_load);
-fprintf('  Lifetime energy: %.0f kWh (%.1f MWh)\n\n', E_vie, E_vie/1000);
+fprintf('  Motor efficiency: %.1f%%\n', eta*100);
+fprintf('  Lifetime energy losses: %.0f kWh (%.1f MWh)\n\n', E_pertes, E_pertes/1000);
 
 %% Step 1: Import material data from CSV
 fprintf('===== STEP 1: Import Material Data =====\n');
@@ -91,7 +95,7 @@ if USE_DATABASE
         'market for permanent magnet, for electric motor', materials.magnets.mass;   % kg
         'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', materials.stator_steel.mass + materials.rotor_steel.mass;  % kg
         'market for copper, cathode', materials.copper.mass;   % kg
-        'market for electricity, low voltage', E_vie   % kWh (lifetime energy)
+        'market for electricity, low voltage', E_pertes   % kWh (lifetime energy losses)
     };
 
     fprintf('\nMaterial quantities from database:\n');
@@ -108,11 +112,11 @@ else
         'market for permanent magnet, for electric motor', 0.8;   % kg
         'market for steel, 3.2% silicon alloy, for grain oriented electrical steel', 12.3;  % kg
         'market for copper, cathode', 5.2;   % kg
-        'market for electricity, low voltage', E_vie   % kWh (lifetime energy)
+        'market for electricity, low voltage', E_pertes   % kWh (lifetime energy losses)
     };
 
     fprintf('\nManually defined material quantities:\n');
-    fprintf('  Lifetime energy: %.0f kWh (%.1f MWh)\n', E_vie, E_vie/1000);
+    fprintf('  Lifetime energy losses: %.0f kWh (%.1f MWh)\n', E_pertes, E_pertes/1000);
 end
 
 fprintf('\nMotor configuration:\n');

@@ -1,14 +1,16 @@
-%% LIFETIME ENERGY CONSUMPTION AND LCA ANALYSIS
-% This script calculates motor LCA considering lifetime energy consumption
+%% LIFETIME ENERGY LOSSES AND LCA ANALYSIS
+% This script calculates motor LCA considering lifetime energy losses
 %
-% Energy formula: E_vie = P_nom × f_load × t_life
+% Energy losses formula: E_losses = P_nom × f_load × t_life × (1 - η)
 % Where:
 %   P_nom: Nominal power (kW)
 %   f_load: Load factor (0.3 to 0.7)
 %   t_life: Cumulative operating hours (h)
+%   η: Motor efficiency (typically 0.80 for 80%)
 %
-% Example: Small motor (1 kW), 20,000 h, f_load = 0.5
-%   E = 1 × 0.5 × 20,000 = 10,000 kWh ≈ 10 MWh
+% Note: Only losses contribute to environmental impact during use phase
+% Example: Small motor (1 kW), 20,000 h, f_load = 0.5, η = 0.80
+%   E_losses = 1 × 0.5 × 20,000 × (1-0.80) = 2,000 kWh = 2 MWh
 %
 % Authors: Hugo HELBLING <hugo.helbling@univ-lyon1.fr>
 %          Romain DELPOUX <romain.delpoux@insa-lyon.fr>
@@ -25,7 +27,7 @@ clc;
 % Set USE_DATABASE to false to use manually defined quantities
 USE_DATABASE = true;  % Change to true to use database
 
-fprintf('===== LIFETIME ENERGY CONSUMPTION AND LCA ANALYSIS =====\n');
+fprintf('===== LIFETIME ENERGY LOSSES AND LCA ANALYSIS =====\n');
 if USE_DATABASE
     fprintf('===== DATABASE MODE =====\n\n');
 else
@@ -43,17 +45,19 @@ fprintf('Step 2: Defining motor specifications...\n');
 
 % Motor parameters
 P_nom = 2;          % Nominal power (kW)
-t_life = 10000;      % Lifetime operating hours (h)
-f_load = 0.5;     % Load factor (0.3 to 0.7)
+t_life = 10000;     % Lifetime operating hours (h)
+f_load = 0.5;       % Load factor (0.3 to 0.7)
+eta = 0.80;         % Motor efficiency (80%)
 
-% Calculate lifetime energy consumption
-E_vie = P_nom * f_load * t_life;  % kWh
+% Calculate lifetime energy losses (only losses contribute to LCA)
+E_pertes = P_nom * f_load * t_life * (1 - eta);  % kWh
 
 fprintf('Motor specifications:\n');
 fprintf('  Nominal power: %.1f kW\n', P_nom);
 fprintf('  Operating hours: %.0f h\n', t_life);
 fprintf('  Load factor: %.2f\n', f_load);
-fprintf('  Lifetime energy: %.0f kWh (%.1f MWh)\n\n', E_vie, E_vie/1000);
+fprintf('  Motor efficiency: %.1f%%\n', eta*100);
+fprintf('  Lifetime energy losses: %.0f kWh (%.1f MWh)\n\n', E_pertes, E_pertes/1000);
 
 %% Step 3: Define motor materials (manufacturing phase)
 fprintf('Step 3: Defining motor materials...\n');
@@ -96,10 +100,10 @@ fprintf('\n');
 %% Step 4: Calculate total LCA (manufacturing + lifetime energy)
 fprintf('Step 4: Calculating total LCA...\n');
 
-% Combine manufacturing and lifetime energy
+% Combine manufacturing and lifetime energy losses
 totalMaterials = [
     baseMaterials;
-    {'market for electricity, low voltage', E_vie}
+    {'market for electricity, low voltage', E_pertes}  % E_pertes represents losses only
 ];
 
 % Calculate total impact
@@ -132,13 +136,13 @@ n_points = length(t_life_range);
 
 results_life = struct();
 results_life.t_life = t_life_range;
-results_life.E_vie = P_nom * f_load * t_life_range;
+results_life.E_pertes = P_nom * f_load * t_life_range * (1 - eta);  % Energy losses
 results_life.TotalScore = zeros(1, n_points);
 results_life.ManufacturingScore = manufacturing_score * ones(1, n_points);
 results_life.UsePhaseScore = zeros(1, n_points);
 
 for i = 1:n_points
-    E_current = results_life.E_vie(i);
+    E_current = results_life.E_pertes(i);
     currentMaterials = [baseMaterials; {'market for electricity, low voltage', E_current}];
     impacts = calculateMotorLCA(motorRAWmaterials, currentMaterials);
     results_life.TotalScore(i) = impacts.TotalUniqueScore;
@@ -146,6 +150,39 @@ for i = 1:n_points
 end
 
 fprintf('Lifetime analysis complete!\n\n');
+
+%% Step 6b: Parametric analysis - Vary efficiency
+fprintf('Step 6b: Parametric analysis - Efficiency variation...\n\n');
+
+% Define efficiency values to test
+eta_values = [0.80, 0.85, 0.90, 0.95];
+n_eta = length(eta_values);
+
+% Store results for each efficiency
+results_eta = struct();
+results_eta.eta_values = eta_values;
+results_eta.t_life = t_life_range;
+results_eta.UsePhasePercentage = zeros(n_eta, n_points);
+
+for j = 1:n_eta
+    eta_current = eta_values(j);
+    fprintf('  Calculating for η = %.0f%%...\n', eta_current*100);
+
+    for i = 1:n_points
+        % Calculate energy losses for current efficiency
+        E_current = P_nom * f_load * t_life_range(i) * (1 - eta_current);
+
+        % Calculate total impact
+        currentMaterials = [baseMaterials; {'market for electricity, low voltage', E_current}];
+        impacts = calculateMotorLCA(motorRAWmaterials, currentMaterials);
+
+        % Calculate use phase percentage
+        use_score = impacts.TotalUniqueScore - manufacturing_score;
+        results_eta.UsePhasePercentage(j, i) = 100 * use_score / impacts.TotalUniqueScore;
+    end
+end
+
+fprintf('Efficiency analysis complete!\n\n');
 
 %% Step 7: Visualizations
 fprintf('Step 7: Creating visualizations...\n');
@@ -170,15 +207,51 @@ ylabel('Unique Score');
 title('Impact by Life Cycle Phase');
 grid on;
 
+% Figure 1b: Impact categories by life cycle phase
+figure('Name', 'Impact Categories by Phase', 'NumberTitle', 'off', 'Position', [120, 120, 1400, 600]);
+
+% Get normalized impacts for manufacturing and total
+impactCategories = fieldnames(manufacturingImpacts.TotalNormalizedImpacts);
+nCategories = length(impactCategories);
+manufImpacts = zeros(nCategories, 1);
+totalImpacts = zeros(nCategories, 1);
+
+for i = 1:nCategories
+    manufImpacts(i) = manufacturingImpacts.TotalNormalizedImpacts.(impactCategories{i});
+    totalImpacts(i) = motorImpacts.TotalNormalizedImpacts.(impactCategories{i});
+end
+
+% Calculate use phase impacts
+useImpacts = totalImpacts - manufImpacts;
+
+% Sort by total value
+[~, sortIdx] = sort(totalImpacts, 'descend');
+manufImpacts_sorted = manufImpacts(sortIdx);
+useImpacts_sorted = useImpacts(sortIdx);
+impactCategories_sorted = impactCategories(sortIdx);
+
+% Create stacked bar chart
+barData = [manufImpacts_sorted, useImpacts_sorted];
+bar(barData, 'stacked');
+ax = gca;
+ax.XTick = 1:length(impactCategories_sorted);
+ax.XTickLabel = impactCategories_sorted;
+ylabel('Normalized Impact');
+title('Normalized Impacts by Environmental Category and Life Cycle Phase');
+legend('Manufacturing', 'Use Phase', 'Location', 'best');
+grid on;
+xtickangle(45);
+set(gca, 'FontSize', 10);
+
 % Figure 2: Lifetime analysis
 figure('Name', 'Lifetime Analysis', 'NumberTitle', 'off', 'Position', [150, 150, 1200, 500]);
 
 subplot(1, 3, 1);
-plot(results_life.t_life/1000, results_life.E_vie/1000, 'b-o', 'LineWidth', 2);
+plot(results_life.t_life/1000, results_life.E_pertes/1000, 'b-o', 'LineWidth', 2);
 grid on;
 xlabel('Operating Hours (×1000 h)');
-ylabel('Lifetime Energy (MWh)');
-title(sprintf('Energy Consumption\n(P=%.1f kW, f=%.2f)', P_nom, f_load));
+ylabel('Lifetime Energy Losses (MWh)');
+title(sprintf('Energy Losses\n(P=%.1f kW, f=%.2f, η=%.0f%%)', P_nom, f_load, eta*100));
 
 subplot(1, 3, 2);
 plot(results_life.t_life/1000, results_life.TotalScore, 'r-o', 'LineWidth', 2);
@@ -200,6 +273,31 @@ xlabel('Operating Hours (×1000 h)');
 ylabel('Use Phase Contribution (%)');
 title('Use Phase Impact Percentage');
 
+% Figure 3: Use Phase Percentage for Different Efficiencies
+figure('Name', 'Use Phase vs Efficiency', 'NumberTitle', 'off', 'Position', [170, 170, 900, 600]);
+
+% Define colors and line styles for different efficiencies
+colors = [0.8 0.2 0.2;    % Red for 80%
+          0.2 0.6 0.8;    % Blue for 85%
+          0.2 0.8 0.2;    % Green for 90%
+          0.8 0.6 0.2];   % Orange for 95%
+
+hold on;
+for j = 1:n_eta
+    plot(results_eta.t_life/1000, results_eta.UsePhasePercentage(j,:), ...
+        '-o', 'LineWidth', 2.5, 'MarkerSize', 8, 'Color', colors(j,:), ...
+        'DisplayName', sprintf('η = %.0f%%', eta_values(j)*100));
+end
+hold off;
+
+grid on;
+xlabel('Heures de fonctionnement (×1000 h)', 'FontSize', 14);
+ylabel('Contribution de la phase d''usage (%)', 'FontSize', 14);
+title('Pourcentage de l''impact dû à la phase d''usage selon le rendement', 'FontSize', 14);
+legend('Location', 'southeast', 'FontSize', 12);
+set(gca, 'FontSize', 12);
+ylim([0 100]);
+
 fprintf('Visualizations created!\n');
 
 % Save figures
@@ -216,10 +314,20 @@ figure(1);
 print(fullfile(figuresDir, 'life_cycle_phases'), '-dpng', '-r300');
 print(fullfile(figuresDir, 'life_cycle_phases'), '-depsc');
 
-% Save Figure 2: Lifetime Analysis
+% Save Figure 1b: Impact Categories by Phase
 figure(2);
+print(fullfile(figuresDir, 'impact_categories_by_phase'), '-dpng', '-r300');
+print(fullfile(figuresDir, 'impact_categories_by_phase'), '-depsc');
+
+% Save Figure 2: Lifetime Analysis
+figure(3);
 print(fullfile(figuresDir, 'lifetime_analysis'), '-dpng', '-r300');
 print(fullfile(figuresDir, 'lifetime_analysis'), '-depsc');
+
+% Save Figure 3: Use Phase vs Efficiency
+figure(4);
+print(fullfile(figuresDir, 'use_phase_multi_efficiency'), '-dpng', '-r300');
+print(fullfile(figuresDir, 'use_phase_multi_efficiency'), '-depsc');
 
 fprintf('Figures saved in %s (PNG and EPS formats)\n\n', figuresDir);
 
@@ -230,11 +338,11 @@ fprintf('===== KEY FINDINGS =====\n');
 idx_50 = find(100*results_life.UsePhaseScore./results_life.TotalScore >= 50, 1);
 if ~isempty(idx_50)
     fprintf('Use phase becomes dominant (>50%%) after %.0f hours (%.1f MWh)\n', ...
-        results_life.t_life(idx_50), results_life.E_vie(idx_50)/1000);
+        results_life.t_life(idx_50), results_life.E_pertes(idx_50)/1000);
 end
 
 % Impact per MWh
-impact_per_MWh = use_phase_score / (E_vie/1000);
+impact_per_MWh = use_phase_score / (E_pertes/1000);
 fprintf('Impact per MWh of operation: %.4e\n', impact_per_MWh);
 
 % Lifetime impact analysis
@@ -246,8 +354,8 @@ fprintf('  At %.0f h: Total impact = %.4e (Use phase: %.1f%%)\n', ...
 %% Step 9: Save results
 fprintf('\n===== SAVING RESULTS =====\n');
 save('lifetime_analysis_results.mat', 'motorRAWmaterials', 'baseMaterials', ...
-    'P_nom', 't_life', 'f_load', 'E_vie', 'motorImpacts', ...
-    'manufacturingImpacts', 'results_life');
+    'P_nom', 't_life', 'f_load', 'E_pertes', 'motorImpacts', ...
+    'manufacturingImpacts', 'results_life', 'results_eta');
 fprintf('Results saved to lifetime_analysis_results.mat\n');
 
 fprintf('\n===== ANALYSIS COMPLETE =====\n');
