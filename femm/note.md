@@ -45,3 +45,10 @@ Fait (13 octobre 2026, soir) :
   (x 5,18 sur tôles, cuivre et aimants).
 - beta = 45° n'est pas le MTPA de la machine à aimants : prévoir un balayage en beta (et Is) pour
   comparer les deux machines à leur MTPA respectif / à puissance équivalente.
+
+Fait (13 octobre 2026, L_active confirmé = 100 mm par Romain) :
+- motorConfig.m : cfg.L_active = 0.1. Masses (machine complète) : tôles stator 3,60 kg, rotor 2,17 kg,
+  aimants 1,41 kg (PMa-SynRM). Fichiers tmp/motor_materials_SynRM.mat et _PMaSynRM.mat.
+  database/motor_materials.mat (V1, 19,3 mm) NON remplacé : à faire pour l'ACV V2 (masses x 5,18).
+- torqueRipple.m à 100 mm, Is = 10 A, beta = 45° : SynRM 2,03 Nm (ondulation c-c 47 %),
+  PMa-SynRM 6,19 Nm (129 %). Prochaine étape : balayage en beta pour le MTPA de chaque machine.
