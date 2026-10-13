@@ -12,7 +12,7 @@
 % (sources/Lien vers machine_modeling, parametres_machine.m, topologie MSAP) :
 % Br = 1,1 T et mu_r = 1,1.
 %
-% See also SetProblemType, femmSetup.
+% See also motorConfig, configureBarriers, torqueRipple, femmSetup.
 
 clearvars; clc;
 
@@ -33,55 +33,23 @@ end
 
 %% Configuration de la machine
 % --- Choix de la variante ----------------------------------------------------
-useMagnets = true;    % true : barrières de flux remplies d'aimants (PMa-SynRM)
+useMagnets = true;   % true : barrières de flux remplies d'aimants (PMa-SynRM)
                      % false : barrières en air (SynRM de référence)
 
-% --- Modèle FEMM --------------------------------------------------------------
-motorName = 'femmSynrelLaplace.fem'; % casse exacte du fichier (Linux y est sensible)
-motor.parameters.p = 2;              % paires de pôles
-motor.parameters.m = 2;              % nombre de phases
-L_active = 19.3e-3;                  % [m] longueur active
-nSym = 4;                            % le modèle représente 1/4 de la machine
-smartMeshVar = 0;
-
-% --- Barrières de flux du rotor (coordonnées des étiquettes du .fem) ---------
-% 4 couches de barrières par pôle. Les 3 couches intérieures sont coupées en
-% deux par une nervure centrale sur l'axe du pôle (45°) ; la couche extérieure
-% est une seule région. Chaque ligne = une région, repérée par son étiquette.
-barrierLabels = [ ...
-    0.012484449195535914  0.0096839314477170247   % couche 1, demi-barrière
-    0.0096839314477170316 0.012484449195535909    % couche 1, demi-barrière
-    0.019506951868024862  0.015131142887057848    % couche 2
-    0.015131142887057858  0.019506951868024851    % couche 2
-    0.024968898391071827  0.019367862895434049    % couche 3
-    0.019367862895434063  0.024968898391071817    % couche 3
-    0.030010695181576709  0.02327868136470438];   % couche 4 (région unique)
-rotorGroup = 1;                      % groupe FEMM des régions du rotor
-
-% --- Aimants (valeurs de machine_modeling/parametres_machine.m, MSAP) --------
-mu0 = 4*pi*1e-7;                     % [H/m]
-magnet.name     = 'NdFeB_LCA';       % nom du matériau créé dans FEMM
-magnet.Br       = 1.1;               % [T] induction rémanente (B_aimant)
-magnet.muR      = 1.1;               % [-] perméabilité relative (mur_a)
-magnet.Hc       = magnet.Br/(mu0*magnet.muR); % [A/m] champ coercitif
-magnet.sigma    = 0.667;             % [MS/m] conductivité (sans effet en magnétostatique)
-magnet.density  = 7500;              % [kg/m^3] masse volumique NdFeB
-magnet.dirDeg   = 45;                % [°] direction d'aimantation : axe q du pôle
-                                     % (axe de symétrie des barrières, 45° dans
-                                     % le quart de machine). Le signe (45 ou
-                                     % 225) doit rester cohérent avec la
-                                     % convention de courant de SetProblemType.
+% Paramètres partagés (modèle, barrières de flux, aimants, masses volumiques)
+cfg = motorConfig(useMagnets = useMagnets);
+motorType = cfg.motorType;
+motorName = cfg.femFile;
+L_active  = cfg.L_active;            % [m] longueur active
+nSym      = cfg.nSym;                % le modèle représente 1/4 de la machine
+barrierLabels = cfg.barrierLabels;   % régions de barrières de flux (étiquettes)
+magnet    = cfg.magnet;              % propriétés des aimants (machine_modeling)
+smartMeshVar = cfg.smartMesh;
 
 % --- Masses volumiques (20 °C) ------------------------------------------------
-rho_steel  = 7850;  % [kg/m^3] tôles magnétiques (M270-35A typique)
-rho_copper = 8960;  % [kg/m^3] cuivre
-rho_magnet = magnet.density;
-
-if useMagnets
-    motorType = 'PMaSynRM';
-else
-    motorType = 'SynRM';
-end
+rho_steel  = cfg.rho.steel;   % [kg/m^3] tôles magnétiques
+rho_copper = cfg.rho.copper;  % [kg/m^3] cuivre
+rho_magnet = cfg.rho.magnet;  % [kg/m^3] NdFeB
 
 %% Ouverture du modèle et configuration des barrières
 tmpFileName = fullfile('tmp', ['femm_' motorType]); % séparateurs portables
@@ -96,25 +64,7 @@ svgFileName = [tmpFileName '.fem'];
 mi_saveas(svgFileName);
 
 % Remplissage des barrières de flux : aimants ou air
-if useMagnets
-    % Matériau aimant : mu_x, mu_y, H_c, J, Cduct, Lam_d, Phi_hmax, lam_fill,
-    % LamType, Phi_hx, Phi_hy
-    mi_addmaterial(magnet.name, magnet.muR, magnet.muR, magnet.Hc, ...
-        0, magnet.sigma, 0, 0, 1, 0, 0, 0);
-    barrierMaterial = magnet.name;
-    barrierMagDir   = magnet.dirDeg;
-else
-    barrierMaterial = 'Air';
-    barrierMagDir   = 0;
-end
-
-for k = 1:size(barrierLabels, 1)
-    mi_clearselected();
-    mi_selectlabel(barrierLabels(k,1), barrierLabels(k,2));
-    % blockname, automesh, meshsize, incircuit, magdir, group, turns
-    mi_setblockprop(barrierMaterial, 1, 0, '<None>', barrierMagDir, rotorGroup, 0);
-end
-mi_clearselected();
+configureBarriers(cfg);
 
 n_nodes = mi_createmesh; % maillage
 fprintf('\nVariante : %s\n', motorType);
@@ -162,9 +112,9 @@ materials.rotor_steel.description = 'Laminated magnetic steel sheets - rotor';
 % ------------------------------------------------------------------------
 % 3. CUIVRE - BOBINAGE STATOR
 % ------------------------------------------------------------------------
-Jcu   = 5e6;    % [A/m^2] densité de courant (limite thermique)
-n_cs  = 30;     % [-]     conducteurs par encoche
-kfill = 0.7;    % [-]     coefficient de remplissage
+Jcu   = cfg.winding.Jcu;    % [A/m^2] densité de courant (limite thermique)
+n_cs  = cfg.winding.n_cs;   % [-]     conducteurs par encoche
+kfill = cfg.winding.kfill;  % [-]     coefficient de remplissage
 
 % Sélection des encoches (sélection multiple)
 mo_clearblock();
