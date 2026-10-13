@@ -1,6 +1,6 @@
 %% Ondulation de couple : SynRM sans aimants vs PMa-SynRM (même géométrie)
 % Simule un point de fonctionnement (type "one_OP" de SetProblemType) sur un
-% quart de tour mécanique (un pas polaire, p = 2) pour les deux variantes de la
+% huitième de tour mécanique (le couple se répète deux fois par pas polaire, p = 2) pour les deux variantes de la
 % machine : barrières de flux en air (SynRM) puis remplies d'aimants
 % (PMa-SynRM). Le couple est relevé à chaque position du rotor, les deux
 % courbes sont tracées et toutes les grandeurs (couple, courants, flux,
@@ -29,8 +29,9 @@ if ~exist('results', 'dir'), mkdir('results'); end
 %% Point de fonctionnement
 Is       = 10;          % [A] amplitude du courant
 betaDeg  = 45;          % [°] angle de courant, idq = Is [cos(beta) sin(beta)]'
-sweep    = pi/2;        % [rad] quart de tour mécanique = un pas polaire (p = 2)
-nSteps   = 90;          % positions du rotor sur le balayage (pas de 1°)
+sweep    = pi/4;        % [rad] 1/8 de tour mécanique : le couple se répète deux fois
+                        % par pas polaire (p = 2, 2 x 90° élec)
+nSteps   = 15;          % positions du rotor sur le balayage (pas de 3°)
 variants = [false true]; % useMagnets : SynRM puis PMa-SynRM
 
 problem = SetProblemType("one_OP", nSteps, Is, deg2rad(betaDeg), sweep);
@@ -139,7 +140,7 @@ for v = 1:numel(types)
 end
 xlabel('Position du rotor \theta_{m} [°]');
 ylabel('Couple [Nm]');
-title(sprintf('Couple sur un pas polaire, I_s = %g A, \\beta = %g°', Is, betaDeg));
+title(sprintf('Couple sur 1/8 de tour mécanique, I_s = %g A, \\beta = %g°', Is, betaDeg));
 legend('Location', 'best');
 xlim([0 rad2deg(sweep)]);
 

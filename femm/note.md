@@ -33,3 +33,15 @@ Fait (13 octobre 2026, suite) :
 À FAIRE EN PRIORITÉ : relancer torqueRipple.m (environ 12 min, 2 x 90 résolutions) pour obtenir
   results/torqueRipple_Is10A_beta45deg.mat/.png/.eps avec l'aimantation corrigée, puis vérifier
   que le couple PMa-SynRM est positif et supérieur au SynRM.
+
+Fait (13 octobre 2026, soir) :
+- torqueRipple.m : sweep = pi/4 (le couple se répète 2 fois par pas polaire), nSteps = 15.
+- Aimantation 225° validée : couple moyen PMa-SynRM = +1,19 Nm (ondulation c-c 129 %) contre
+  +0,39 Nm SynRM (47 %), Is = 10 A, beta = 45°, profondeur 19,3 mm.
+- Écart avec l'étude couple d'origine expliqué : le script Collab_Laplace n'appelait pas mi_probdef,
+  FEMM utilisait la profondeur du .fem = 100 mm. Au banc (dataHBK normI8beta47) : 1,06 Nm mesuré à
+  8 A / 47°, FEMM 1,29 Nm avec 100 mm. Test : SynRM 7 A / 45° -> 0,19 Nm à 19,3 mm, 0,98 Nm à 100 mm.
+  DÉCISION À PRENDRE : L_active = 0,1 m dans motorConfig.m ? Impact direct sur les masses de l'ACV V1
+  (x 5,18 sur tôles, cuivre et aimants).
+- beta = 45° n'est pas le MTPA de la machine à aimants : prévoir un balayage en beta (et Is) pour
+  comparer les deux machines à leur MTPA respectif / à puissance équivalente.
