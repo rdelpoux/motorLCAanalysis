@@ -1,6 +1,14 @@
 %% Init FEMM
 clear all;clc;
 
+% Se placer dans le dossier du script : FEMM résout les chemins relatifs
+% (tmp/, fichier .fem) depuis le dossier courant de MATLAB au moment de openfemm
+cd(fileparts(mfilename('fullpath')));
+
+% Pont FEMM portable : ActiveX sous Windows, wine femm.exe -filelink sous Linux
+% (déployé par la skill femmLinux, voir femmLinux/wine/README.md)
+addpath(fullfile(pwd, 'femmLinux'));
+femmSetup();
 
 % Load path
 showFemm = false;
@@ -13,15 +21,14 @@ end
 %run ./../generalParam.m
 
 %% Motor Paramters
-motorName = 'femmSynRelLaplace.fem';
+motorName = 'femmSynrelLaplace.fem'; % casse exacte du fichier (Linux y est sensible)
 motor.parameters.p = 2;
 motor.parameters.m = 2;
 smartMeshVar = 0;
 
 
 %%
-tmpFileName = ['.\tmp\femm_temp_svg'];
-addpath('C:\femm42\mfiles');
+tmpFileName = fullfile('tmp', 'femm_temp_svg'); % séparateurs portables
 
 openfemm(~showFemm);
 main_resize(800,800)
